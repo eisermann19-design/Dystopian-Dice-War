@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
+    <title>Dystopia Tactical Squad Dice v19.3 - EMERGENCY FIX</title>
+    <style>
+        :root {
+            --bg-color: #020203;
+            --card-bg: rgba(10, 10, 13, 0.95);
+            --accent-color: #a30000;
+            --accent-glow: #ff0000;
+            --text-color: #e5e5e5;
+            --text-muted: #4e4e5d;
+            --font-main: 'Courier', 'Courier New', monospace;
+            --font-heading: 'Arial Black', 'Impact', sans-serif;
+
+            --color-nahkampf: #ff2222;
+            --color-fernkampf: #2266ff;
+            --color-superkraft: #ffbb00;
+            --color-defensiv: #bbbbbb;
+            
+            --color-highlight-green: rgba(0, 255, 100, 0.25);
+            --border-highlight-green: #00ff66;
+            
+            --scenario-vignette: inset 0 0 40px rgba(0,0,0,0.8);
+            --scenario-filter: none;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: var(--font-main);
+            font-weight: bold;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            transition: all 0.5s ease;
+            filter: var(--scenario-filter);
+        }
+
+        body::before {
+            content: " "; display: block; position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            box-shadow: var(--scenario-vignette);
+            pointer-events: none; z-index: 998;
+            transition: box-shadow 0.5s ease;
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 1; overflow: hidden; opacity: 0.15;
+        }
+
+        .matrix-column {
+            position: absolute; bottom: -200px; font-size: 11px; color: var(--accent-glow);
+            writing-mode: vertical-rl; text-orientation: upright; white-space: nowrap;
+            animation: matrix-rise linear infinite; text-shadow: 0 0 4px var(--accent-color);
+        }
+
+        @keyframes matrix-rise {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-120vh); }
+        }
+
+        body::after {
+            content: " "; display: block; position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: 
+                linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%),
+                linear-gradient(0deg, rgba(255, 0, 0, 0.03) 10%, transparent 10%);
+            background-size: 100% 4px, 100% 300px;
+            z-index: 999; pointer-events: none; opacity: 0.8;
+            animation: crt-lines 4s linear infinite;
+        }
+
+        @keyframes crt-lines {
+            0% { background-position: 0 0, 0 0; }
+            100% { background-position: 0 0, 0 600px; }
+        }
+
+        .container { width: 100%; max-width: 480px; text-align: center; position: relative; z-index: 5; }
+
+        h2 { 
+            font-family: var(--font-heading); font-size: 20px; text-transform: uppercase;
+            letter-spacing: 2px; margin-bottom: 15px; border-bottom: 2px solid var(--accent-color); 
+            padding-bottom: 5px; display: inline-block; color: #fff; position: relative;
+            animation: text-glitch-fast 1.8s steps(1) infinite;
+        }
+
+        @keyframes text-glitch-fast {
+            0%, 10%, 80%, 100% { text-shadow: 1px 0 0 rgba(255,0,0,0.8), -1px 0 0 rgba(0,255,255,0.8); transform: skewX(0deg); }
+            2% { text-shadow: 4px 0 0 #00ffff, -4px 0 0 #ff00ff; transform: skewX(-8deg) scaleY(1.1); filter: brightness(1.5); }
+            4% { text-shadow: -5px 0 0 #00ff00, 5px 0 0 #ff0000; transform: skewX(6deg); }
+            6% { text-shadow: 2px 0 0 #ffff00, -2px 0 0 #0000ff; transform: clip-path(inset(40% 0 61% 0)); }
+            82% { text-shadow: 3px 0 0 #ff00ff, -3px 0 0 #00ffff; transform: skewX(10deg); }
+            84% { transform: translateX(-4px); }
+        }
+
+        h3 {
+            font-family: var(--font-heading); font-size: 14px; text-transform: uppercase;
+            letter-spacing: 1px; margin: 25px 0 10px 0; color: #fff; text-align: left;
+            border-bottom: 1px dashed #30303c; padding-bottom: 4px;
+        }
+
+        .screen {
+            display: none; background: var(--card-bg); padding: 20px; border-radius: 4px;
+            border: 1px solid #321010; box-shadow: 0 0 25px rgba(163,0,0,0.15), inset 0 0 15px rgba(0,0,0,0.9);
+            margin-top: 15px; backdrop-filter: blur(6px);
+        }
+
+        .screen.active { display: block !important; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 15px; }
+        .grid-numbers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 15px; }
+        
+        .full-width { grid-column: span 2; }
+
+        button {
+            background-color: #0b0b0f; color: #ffffff !important; border: 1px solid #4a1c1c;
+            padding: 15px 10px; font-size: 14px; text-transform: uppercase; border-radius: 4px;
+            cursor: pointer; width: 100%; display: block; text-align: left;
+        }
+        button:active:not(:disabled) { background-color: var(--accent-color); border-color: var(--accent-glow); color: #fff !important; }
+
+        button.char-locked { background-color: #030305 !important; border-color: #101015 !important; opacity: 0.1 !important; cursor: not-allowed; }
+
+        .btn-main {
+            background-color: #5a0000; border: 1px solid var(--accent-glow); padding: 16px;
+            margin-top: 20px; font-size: 18px; color: #fff !important; box-shadow: 0 0 15px rgba(163, 3, 3, 0.6);
+            text-shadow: 0 0 4px #fff; text-align: center;
+        }
+        
+        button:disabled { background-color: #050507; border-color: #15151c; color: #252530 !important; cursor: not-allowed; }
+
+        .char-card-title { font-size: 14px; text-transform: uppercase; margin-bottom: 8px; color: #ffffff !important; font-family: var(--font-heading); display: flex; align-items: center; gap: 6px; }
+        .char-stats { font-size: 12px; color: #8a8a9a !important; text-align: left; line-height: 1.5; border-top: 1px solid #3a1c1c; padding-top: 6px; }
+        .stat-line { display: flex; justify-content: space-between; margin-bottom: 2px; }
+        .stat-val { color: #ffffff !important; }
+
+        .live-status-bar { background: #050508; border: 1px solid #2a1010; padding: 10px; border-radius: 4px; margin-bottom: 15px; text-align: left; font-size: 12px; }
+        .squad-summary-list { font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+
+        .dice-board {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px;
+            background: #020204; border: 1px dashed #421111; border-radius: 4px; padding: 15px;
+            margin: 15px 0; min-height: 120px; align-items: center; justify-content: center;
+        }
+
+        .dice-cup {
+            background: #09090e; border: 1px solid #2a1515; border-radius: 6px; padding: 10px 5px;
+            text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.8); position: relative;
+            opacity: 0; transform: translateY(10px); transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+        
+        .dice-cup.visible { opacity: 1; transform: translateY(0); }
+
+        .dice-graphic {
+            width: 45px; height: 45px; margin: 0 auto 5px auto; display: flex; align-items: center;
+            justify-content: center; font-size: 18px; color: #fff; border-radius: 6px;
+            border: 2px solid rgba(255,255,255,0.25); text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
+        }
+
+        .dice-rolling { animation: matrix-flicker-fast 0.07s infinite alternate; box-shadow: 0 0 15px var(--accent-glow), inset 0 0 10px rgba(0,0,0,0.5) !important; border-color: #fff !important; }
+
+        .dice-crit {
+            animation: crit-pulse 0.4s infinite alternate !important;
+            border-color: #00ff66 !important;
+            box-shadow: 0 0 25px #00ff66, inset 0 0 10px rgba(0,255,100,0.8) !important;
+        }
+        @keyframes crit-pulse {
+            0% { transform: scale(1); filter: brightness(1); }
+            100% { transform: scale(1.08); filter: brightness(1.5); }
+        }
+
+        .dice-fail {
+            animation: fail-glitch 0.1s infinite !important;
+            border-color: #ff0055 !important;
+            box-shadow: 0 0 25px #ff0055, inset 0 0 10px rgba(255,0,85,0.8) !important;
+        }
+        @keyframes fail-glitch {
+            0% { transform: translate(1px, 1px) skewX(-5deg); filter: hue-rotate(90deg); }
+            50% { transform: translate(-1px, -1px) skewX(5deg); filter: invert(0.2); }
+            100% { transform: translate(0px, 0px); }
+        }
+
+        .dice-meta { font-size: 9px; color: var(--text-muted); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .summary-container { background: #040407; padding: 12px; border-radius: 4px; margin-top: 15px; text-align: left; border: 1px solid #201010; }
+        .summary-title { text-transform: uppercase; margin-bottom: 6px; color: #fff; border-bottom: 1px solid #201010; padding-bottom: 4px; }
+        .summary-item { display: flex; justify-content: space-between; margin: 6px 0; font-size: 14px; padding: 4px 8px; border-radius: 4px; border: 1px solid transparent; }
+        
+        .summary-item.highest-attribute-log {
+            background-color: var(--color-highlight-green); border: 1px solid var(--border-highlight-green);
+            box-shadow: 0 0 12px rgba(0, 255, 100, 0.3); animation: row-flash-glitch-fast 0.25s steps(2) 2;
+        }
+
+        @keyframes row-flash-glitch-fast {
+            0% { opacity: 0.2; transform: translateX(-8px) skewX(-5deg); filter: invert(1); }
+            50% { opacity: 1; transform: translateX(8px) skewX(5deg); }
+            100% { transform: translateX(0); }
+        }
+
+        .total-score-container { margin: 20px 0 5px 0; position: relative; }
+        .total-score { font-size: 38px; color: #ffffff; background-color: #2d0000; padding: 12px; border-radius: 4px; border: 2px solid var(--accent-glow); text-shadow: 0 0 12px var(--accent-glow); text-align: center;}
+        .total-score.score-changed { animation: score-glitch-overdrive 0.08s steps(1) infinite; }
+
+        @keyframes score-glitch-overdrive {
+            0% { transform: translate(4px, -3px) skewX(5deg); text-shadow: 4px 0 0 #00ffff, -4px 0 0 #ff00ff; background-color: #4a0000; color: #00ffff; }
+            33% { transform: translate(-3px, 3px) skewX(-5deg); text-shadow: -4px 0 0 #00ff00, 4px 0 0 #ff0000; background-color: #100000; color: #ff00ff; }
+            66% { transform: translate(-5px, -1px); text-shadow: 5px 0 0 #ffff00, -5px 0 0 #0000ff; background-color: #600000; color: #fff; }
+        }
+
+        .total-label { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background-color: #4a0000; padding: 0 8px; font-size: 11px; text-transform: uppercase; color: #fff; border: 1px solid var(--accent-glow); }
+        .total-note { font-size: 11px; color: var(--text-muted); margin-bottom: 15px; text-transform: uppercase;}
+        .round-counter { font-size: 15px; color: #fff; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; }
+
+        .squad-roster-view { background: #030305; border: 1px solid #201010; border-radius: 4px; padding: 10px; text-align: left; }
+        .roster-card { padding: 8px; border-bottom: 1px solid #1a0808; font-size: 12px; }
+        .roster-card:last-child { border-bottom: none; }
+        .roster-header { display: flex; justify-content: space-between; color: #fff; text-transform: uppercase; margin-bottom: 4px; }
+        .roster-stats-line { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; color: var(--text-muted); }
+
+        .scenario-btn {
+            padding: 12px 6px; text-align: left; display: flex; flex-direction: column; gap: 4px;
+        }
+        .scenario-desc { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+
+        /* CLASH OVERLAY */
+        .clash-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(180,0,0,0.99) 0%, rgba(5,0,0,1) 100%);
+            z-index: 9999; display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.08s ease;
+        }
+        .clash-overlay.active { opacity: 1; animation: crt-flicker-extreme 0.05s infinite alternate; }
+        .clash-overlay::before {
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.6) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.15), rgba(0, 255, 0, 0.05), rgba(0, 0, 255, 0.15));
+            z-index: 2; background-size: 100% 8px, 8px 100%;
+        }
+        .clash-text {
+            font-family: var(--font-heading); font-size: 7vw; max-width: 90%;
+            word-wrap: break-word; word-break: break-all; color: #fff;
+            text-transform: uppercase; letter-spacing: 2px;
+            text-shadow: 0 0 15px #ff0000, 0 0 40px #ff0000;
+            animation: text-shake-extreme 0.05s infinite; z-index: 3; text-align: center;
+        }
+
+        @media (min-width: 480px) { .clash-text { font-size: 28px; } }
+
+        @keyframes crt-flicker-extreme {
+            0% { filter: brightness(0.7) contrast(1.6) skewX(-3deg); }
+            50% { filter: brightness(1.5) contrast(0.6) skewX(3deg); }
+            100% { filter: brightness(0.8) contrast(1.3) skewX(0deg); }
+        }
+
+        @keyframes text-shake-extreme {
+            0% { transform: translate(4px, -2px) rotate(1deg); filter: blur(1px); }
+            50% { transform: translate(-4px, 2px) rotate(-1deg); filter: blur(0px); }
+            100% { transform: translate(1px, -3px) rotate(1deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="matrix-bg" id="matrix-container"></div>
+
+<div id="clash-overlay" class="clash-overlay">
+    <div class="clash-text">[ START_COMBAT ]</div>
+</div>
+
+<div class="container">
+
+    <div id="screen-char" class="screen active">
+        <h2>KAMPFAKTE WÄHLEN</h2>
+        <div class="grid" id="char-list"></div>
+    </div>
+
+    <div id="screen-count" class="screen">
+        <h2>Menge bestimmen (<span id="selected-char-name"></span>)</h2>
+        <div class="grid-numbers">
+            <button type="button" onclick="selectCount(1)" style="text-align:center;">1</button>
+            <button type="button" onclick="selectCount(2)" style="text-align:center;">2</button>
+            <button type="button" onclick="selectCount(3)" style="text-align:center;">3</button>
+            <button type="button" onclick="selectCount(4)" style="text-align:center;">4</button>
+            <button type="button" onclick="selectCount(5)" style="text-align:center;">5</button>
+            <button type="button" onclick="selectCount(6)" style="text-align:center;">6</button>
+        </div>
+    </div>
+
+    <div id="screen-next-prompt" class="screen">
+        <h2>Trupp erweitern?</h2>
+        <p style="font-size: 14px; margin: 15px 0; color: var(--text-muted); text-transform: uppercase;">Möchtest du einen weiteren Charakter-Typ hinzufügen?</p>
+        <div class="grid">
+            <button type="button" onclick="handleAppendDecision(true)" style="border-color: #00ff66; color: #00ff66 !important; text-align:center;">JA</button>
+            <button type="button" onclick="handleAppendDecision(false)" style="border-color: var(--accent-color); color: #fff !important; text-align:center;">NEIN</button>
+        </div>
+    </div>
+
+    <div id="screen-scenario" class="screen">
+        <h2>EINSATZ-ZONE WÄHLEN</h2>
+        <div class="grid" id="scenario-list">
+           <button type="button" class="scenario-btn full-width" onclick="selectScenario('closecombat')" style="border-color: #ff0044; background: #1a0008;">
+                <span style="color:#ff0044;">⚡ CLOSE COMBAT</span>
+                <span class="scenario-desc">Keine Modifikationen / Standard-Modus</span>
+            </button>
+             <button type="button" class="scenario-btn" onclick="selectScenario('night')" style="border-color: #33ff33;">
+                <span style="color:#33ff33;">🌌 NACHTMISSION</span>
+                <span class="scenario-desc">Fernkampf -1</span>
+            </button>
+            <button type="button" class="scenario-btn" onclick="selectScenario('heavyrain')" style="border-color: #00ddff;">
+                <span style="color:#00ddff;">🌧️ STARKREGEN</span>
+                <span class="scenario-desc">Fernkampf -1 | Superkraft -1</span>
+            </button>
+            <button type="button" class="scenario-btn" onclick="selectScenario('wasteland')" style="border-color: #77ff00;">
+                <span style="color:#77ff00;">☢️ ÖDLAND-RAUCH</span>
+                <span class="scenario-desc">Superkraft -1</span>
+            </button>
+            <button type="button" class="scenario-btn" onclick="selectScenario('heatwave')" style="border-color: #ff5500;">
+                <span style="color:#ff5500;">🔥 HITZEWELLE</span>
+                <span class="scenario-desc">Nahkampf -1 | Defensive -1</span>
+            </button>
+            <button type="button" class="scenario-btn" onclick="selectScenario('acid')" style="border-color: #ffee00;">
+                <span style="color:#ffee00;">🧪 SÄUREREGEN</span>
+                <span class="scenario-desc">Defensive -1</span>
+            </button>
+            <button type="button" class="scenario-btn" onclick="selectScenario('sun')" style="border-color: #ffffff;">
+                <span style="color:#ffffff;">☀️ GRELLE SONNE</span>
+                <span class="scenario-desc">Nahkampf -1</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="screen-rounds" class="screen">
+        <h2>Einsatz-Runden</h2>
+        <div class="grid-numbers">
+            <button type="button" onclick="selectRounds(1)" style="text-align:center;">1</button>
+            <button type="button" onclick="selectRounds(2)" style="text-align:center;">2</button>
+            <button type="button" onclick="selectRounds(3)" style="text-align:center;">3</button>
+            <button type="button" onclick="selectRounds(4)" style="text-align:center;">4</button>
+            <button type="button" onclick="selectRounds(5)" style="text-align:center;">5</button>
+            <button type="button" onclick="selectRounds(6)" style="text-align:center;">6</button>
+            <button type="button" onclick="selectRounds(7)" style="text-align:center;">7</button>
+            <button type="button" onclick="selectRounds(8)" style="text-align:center;">8</button>
+            <button type="button" onclick="selectRounds(9)" style="text-align:center;">9</button>
+        </div>
+    </div>
+
+    <div id="screen-results" class="screen">
+        <div class="round-counter" id="round-title">RUNDE 1 / X</div>
+        
+        <div class="live-status-bar">
+            <strong>ZONE: <span id="active-zone-display" style="text-transform:uppercase;">-</span></strong><br>
+            <strong>AKTIVER TRUPP:</strong>
+            <div id="active-squad-manifest" class="squad-summary-list"></div>
+        </div>
+
+        <div class="dice-board" id="dice-board-area"></div>
+
+        <div class="summary-container">
+            <div class="summary-title">Wirkung (Summen):</div>
+            <div id="item-Nahkampf" class="summary-item" style="color: var(--color-nahkampf);">
+                <span>⚔️ Nahkampf:</span> <span id="sum-nahkampf">0</span>
+            </div>
+            <div id="item-Fernkampf" class="summary-item" style="color: var(--color-fernkampf);">
+                <span>🏹 Fernkampf:</span> <span id="sum-fernkampf">0</span>
+            </div>
+            <div id="item-Superkraft" class="summary-item" style="color: var(--color-superkraft);">
+                <span>⚡ Superkraft:</span> <span id="sum-superkraft">0</span>
+            </div>
+            <div id="item-Defensiv" class="summary-item" style="color: var(--color-defensiv);">
+                <span>🛡️ Defensive:</span> <span id="sum-defensiv">0</span>
+            </div>
+        </div>
+
+        <div class="total-score-container">
+            <div class="total-label">Kombinierter Schaden</div>
+            <div class="total-score" id="total-sum">0</div>
+        </div>
+        <div class="total-note">(Exklusive Defensive)</div>
+
+        <button type="button" class="btn-main" id="action-btn" onclick="handleActionClick()">WÜRFELLAUF...</button>
+
+        <h3>Eingesetzte Truppen-Akten</h3>
+        <div id="squad-roster-container" class="squad-roster-view"></div>
+    </div>
+
+</div>
+
+<script>
+    let audioCtx = null;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function playClickSound() {
+        initAudio(); if (!audioCtx) return;
+        let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+        osc.type = 'triangle'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.06);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.06);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.06);
+    }
+
+    function playCombatOverlaySound() {
+        initAudio(); if (!audioCtx) return;
+        let now = audioCtx.currentTime;
+        let bassOsc = audioCtx.createOscillator(); let bassGain = audioCtx.createGain();
+        bassOsc.type = 'sawtooth'; bassOsc.frequency.setValueAtTime(90, now);
+        bassOsc.frequency.linearRampToValueAtTime(40, now + 1.2);
+        bassGain.gain.setValueAtTime(0.3, now); bassGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+        bassOsc.connect(bassGain); bassGain.connect(audioCtx.destination);
+        bassOsc.start(); bassOsc.stop(now + 1.2);
+    }
+
+    function playDiceTickSound() {
+        initAudio(); if (!audioCtx) return;
+        let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+        osc.type = 'square'; osc.frequency.setValueAtTime(Math.random() * 400 + 300, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.03);
+    }
+
+    function playCritSound() {
+        initAudio(); if (!audioCtx) return;
+        let now = audioCtx.currentTime;
+        let osc1 = audioCtx.createOscillator(); let gain1 = audioCtx.createGain();
+        osc1.type = 'sine'; osc1.frequency.setValueAtTime(880, now);
+        osc1.frequency.exponentialRampToValueAtTime(1760, now + 0.25);
+        gain1.gain.setValueAtTime(0.15, now); gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc1.connect(gain1); gain1.connect(audioCtx.destination);
+        osc1.start(); osc1.stop(now + 0.25);
+    }
+
+    function playFailSound() {
+        initAudio(); if (!audioCtx) return;
+        let now = audioCtx.currentTime;
+        let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(120, now);
+        osc.frequency.linearRampToValueAtTime(60, now + 0.3);
+        gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0.001, now + 0.3);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(now + 0.3);
+    }
+
+    function triggerScenarioAmbience(type) {
+        initAudio(); if (!audioCtx) return;
+        let now = audioCtx.currentTime;
+
+        if (type === 'night') {
+            let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(65, now);
+            gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0.001, now + 0.8);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(now + 0.8);
+        } else if (type === 'heavyrain') {
+            let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(50, now);
+            osc.frequency.linearRampToValueAtTime(35, now + 1.2);
+            gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(now + 1.2);
+        } else if (type === 'wasteland') {
+            for (let i = 0; i < 6; i++) {
+                let clickTime = now + (Math.random() * 0.8);
+                let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+                osc.type = 'square'; osc.frequency.setValueAtTime(1800, clickTime);
+                gain.gain.setValueAtTime(0.02, clickTime); gain.gain.exponentialRampToValueAtTime(0.001, clickTime + 0.01);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(clickTime); osc.stop(clickTime + 0.01);
+            }
+        } else if (type === 'heatwave') {
+            let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(30, now);
+            gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(now + 0.9);
+        } else if (type === 'acid') {
+            let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+            osc.type = 'square'; osc.frequency.setValueAtTime(1200, now);
+            osc.frequency.exponentialRampToValueAtTime(400, now + 0.4);
+            gain.gain.setValueAtTime(0.03, now); gain.gain.linearRampToValueAtTime(0.001, now + 0.4);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(now + 0.4);
+        } else if (type === 'sun') {
+            let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(600, now);
+            gain.gain.setValueAtTime(0.04, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(now + 0.5);
+        } else if (type === 'closecombat') {
+            let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(85, now);
+            gain.gain.setValueAtTime(0.35, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(now + 0.5);
+        }
+    }
+
+    // ==========================================
+    // GAME ENGINE LOGIC
+    // ==========================================
+    const diceLevels = {
+        0: { name: "W4", max: 4 }, 1: { name: "W6", max: 6 }, 2: { name: "W8", max: 8 },
+        3: { name: "W10", max: 10 }, 4: { name: "W12", max: 12 }
+    };
+
+    const attrConfigs = {
+        "Nahkampf": { color: "var(--color-nahkampf)" }, "Fernkampf": { color: "var(--color-fernkampf)" },
+        "Superkraft": { color: "var(--color-superkraft)" }, "Defensiv": { color: "var(--color-defensiv)" }
+    };
+
+    const attributes = ["Nahkampf", "Fernkampf", "Superkraft", "Defensiv"];
+
+    const characters = [
+        { id: "soldat", name: "Soldat", icon: "🪓", stats: { "Nahkampf": 1, "Fernkampf": 1, "Superkraft": 0, "Defensiv": 1 } },
+        { id: "scharfschuetze", name: "Scharfschütze", icon: "🎯", stats: { "Nahkampf": 0, "Fernkampf": 3, "Superkraft": 0, "Defensiv": 2 } },
+        { id: "elitesoldat", name: "Elitesoldat", icon: "🎖️", stats: { "Nahkampf": 2, "Fernkampf": 2, "Superkraft": 1, "Defensiv": 2 } },
+        { id: "supersoldat", name: "Supersoldat", icon: "🧪", stats: { "Nahkampf": 2, "Fernkampf": 0, "Superkraft": 2, "Defensiv": 2 } },
+        { id: "schildsoldat", name: "Schildsoldat", icon: "🛡️", stats: { "Nahkampf": 1, "Fernkampf": 0, "Superkraft": 0, "Defensiv": 4 } },
+        { id: "techsoldat", name: "Tech-Soldat", icon: "💾", stats: { "Nahkampf": 0, "Fernkampf": 3, "Superkraft": 2, "Defensiv": 1 } },
+        { id: "panzer", name: "Panzer", icon: "🚜", stats: { "Nahkampf": 0, "Fernkampf": 4, "Superkraft": 0, "Defensiv": 4 } },
+        { id: "mech", name: "Mech", icon: "🤖", stats: { "Nahkampf": 4, "Fernkampf": 0, "Superkraft": 0, "Defensiv": 3 } }
+    ];
+
+    const scenarioData = {
+        night: { 
+            name: "🌌 Nachtmission", 
+            vignette: "inset 0 0 100px rgba(0, 10, 30, 0.95), inset 0 0 40px rgba(0, 255, 100, 0.2)", 
+            filter: "brightness(0.7) contrast(1.2)" 
+        },
+        heavyrain: { 
+            name: "🌧️ Starkregen", 
+            vignette: "inset 0 0 80px rgba(0, 110, 255, 0.5), inset 0 0 30px rgba(0,0,0,0.9)", 
+            filter: "hue-rotate(15deg) saturate(1.4)" 
+        },
+        wasteland: { 
+            name: "☢️ Ödland-Rauch", 
+            vignette: "inset 0 0 80px rgba(85, 255, 0, 0.45), inset 0 0 30px rgba(0,0,0,0.9)", 
+            filter: "sepia(0.2) hue-rotate(50deg)" 
+        },
+        heatwave: { 
+            name: "🔥 Hitzewelle", 
+            vignette: "inset 0 0 90px rgba(255, 68, 0, 0.55), inset 0 0 30px rgba(0,0,0,0.9)", 
+            filter: "brightness(1.1) contrast(1.3) saturate(1.5)" 
+        },
+        acid: { 
+            name: "🧪 Säureregen", 
+            vignette: "inset 0 0 80px rgba(230, 255, 0, 0.45), inset 0 0 35px rgba(0,0,0,0.9)", 
+            filter: "hue-rotate(35deg) contrast(1.1)" 
+        },
+        sun: { 
+            name: "☀️ Grelle Sonne", 
+            vignette: "inset 0 0 120px rgba(255, 255, 255, 0.4), inset 0 0 30px rgba(0,0,0,0.7)", 
+            filter: "brightness(1.3) contrast(0.9)" 
+        },
+        closecombat: { 
+            name: "⚡ Close Combat", 
+            vignette: "none", 
+            filter: "none" 
+        }
+    };
+
+    let appState = { squad: [], activeSelection: null, totalRounds: 0, currentRound: 0, scenario: 'closecombat' };
+
+    window.onload = function() { 
+        createMatrixBackground(); 
+        init(); 
+    };
+
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('button')) playClickSound();
+    });
+
+    function createMatrixBackground() {
+        const container = document.getElementById('matrix-container'); if (!container) return;
+        const columnCount = Math.floor(window.innerWidth / 24);
+        const codePool = ["01", "10", "FF", "0X", "A9", "4B"];
+        for (let i = 0; i < columnCount; i++) {
+            const col = document.createElement('div'); col.className = 'matrix-column';
+            let stringLen = Math.floor(Math.random() * 15) + 10; let colText = "";
+            for(let j=0; j<stringLen; j++) colText += codePool[Math.floor(Math.random() * codePool.length)] + " ";
+            col.innerText = colText; col.style.left = `${i * (100 / columnCount)}%`;
+            col.style.animationDuration = `${Math.random() * 5 + 4}s`; col.style.animationDelay = `${Math.random() * -8}s`;
+            col.style.fontSize = `${Math.floor(Math.random() * 4) + 9}px`; container.appendChild(col);
+        }
+    }
+
+    function init() {
+        document.documentElement.style.setProperty('--scenario-vignette', 'inset 0 0 40px rgba(0,0,0,0.8)');
+        document.documentElement.style.setProperty('--scenario-filter', 'none');
+        
+        const charListDiv = document.getElementById('char-list'); 
+        if (!charListDiv) return;
+        
+        charListDiv.innerHTML = '';
+        
+        characters.forEach((char) => {
+            const btn = document.createElement('button'); 
+            btn.setAttribute('type', 'button');
+            
+            const isAlreadyInSquad = appState.squad.some(item => item.character.id === char.id);
+            
+            if (isAlreadyInSquad) { 
+                btn.className = 'char-locked'; 
+                btn.disabled = true; 
+            }
+            
+            // DYNAMISCHE BILD-LOGIK:
+            // Sucht im selben Ordner nach [id].png (z.B. soldat.png, scharfschuetze.png)
+            // Wenn das Bild (noch) nicht existiert, wird das img-Element unsichtbar geschaltet.
+            let imgHtml = `<img src="${char.id}.png" alt="${char.name}" 
+                                onload="this.style.display='block';" 
+                                onerror="this.style.display='none';" 
+                                style="width: 100%; height: 120px; object-fit: cover; border-radius: 4px; margin-bottom: 8px; border: 1px solid #4a1c1c; display: none;">`;
+            
+            btn.innerHTML = `
+                <div class="char-card-title"><span>${char.icon}</span> <span>${char.name}</span></div>
+                ${imgHtml}
+                <div class="char-stats">
+                    <div class="stat-line"><span>⚔️ NK</span><span class="stat-val">Lvl ${char.stats.Nahkampf}</span></div>
+                    <div class="stat-line"><span>🏹 FK</span><span class="stat-val">Lvl ${char.stats.Fernkampf}</span></div>
+                    <div class="stat-line"><span>⚡ SK</span><span class="stat-val">Lvl ${char.stats.Superkraft}</span></div>
+                    <div class="stat-line" style="color:#cccccc"><span>🛡️ DF</span><span class="stat-val">Lvl ${char.stats.Defensiv}</span></div>
+                </div>
+            `;
+            
+            btn.onclick = function() {
+                if (!isAlreadyInSquad) {
+                    selectCharacter(char);
+                }
+            };
+            
+            charListDiv.appendChild(btn);
+        });
+    }
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById(screenId); if (target) target.classList.add('active');
+    }
+
+    function selectCharacter(char) {
+        appState.activeSelection = char;
+        const nameSpan = document.getElementById('selected-char-name'); if (nameSpan) nameSpan.innerText = `${char.icon} ${char.name}`;
+        showScreen('screen-count');
+    }
+
+    function selectCount(count) {
+        appState.squad.push({ character: appState.activeSelection, count: count });
+        appState.activeSelection = null;
+        showScreen('screen-next-prompt');
+    }
+
+    function handleAppendDecision(wantsMore) {
+        if (wantsMore && appState.squad.length < characters.length) {
+            init(); showScreen('screen-char');
+        } else {
+            showScreen('screen-scenario');
+        }
+    }
+
+    function selectScenario(scenKey) {
+        appState.scenario = scenKey;
+        if (scenKey === 'closecombat') {
+            document.documentElement.style.setProperty('--scenario-vignette', 'none');
+            document.documentElement.style.setProperty('--scenario-filter', 'none');
+        } else {
+            document.documentElement.style.setProperty('--scenario-vignette', scenarioData[scenKey].vignette);
+            document.documentElement.style.setProperty('--scenario-filter', scenarioData[scenKey].filter);
+        }
+        showScreen('screen-rounds');
+    }
+
+    function selectRounds(rounds) {
+        appState.totalRounds = rounds; appState.currentRound = 1;
+        triggerClashAndRoll();
+    }
+
+    function rollDice(max) { return Math.floor(Math.random() * max) + 1; }
+    function getRandomAttribute() { return attributes[Math.floor(Math.random() * attributes.length)]; }
+
+    function getTacticalAttribute(charStats) {
+        if (Math.random() < 0.50) {
+            let maxLevel = -1; let bestAttributes = [];
+            attributes.forEach(attr => { if (charStats[attr] > maxLevel) maxLevel = charStats[attr]; });
+            attributes.forEach(attr => { if (charStats[attr] === maxLevel) bestAttributes.push(attr); });
+            return bestAttributes[Math.floor(Math.random() * bestAttributes.length)];
+        } else {
+            return getRandomAttribute();
+        }
+    }
+
+    function getScenarioModifier(attr) {
+        const sc = appState.scenario;
+        if (sc === 'night' && attr === 'Fernkampf') return -1;
+        if (sc === 'heavyrain') {
+            if (attr === 'Fernkampf' || attr === 'Superkraft') return -1;
+        }
+        if (sc === 'wasteland' && attr === 'Superkraft') return -1;
+        if (sc === 'heatwave') {
+            if (attr === 'Nahkampf' || attr === 'Defensiv') return -1;
+        }
+        if (sc === 'acid' && attr === 'Defensiv') return -1;
+        if (sc === 'sun' && attr === 'Nahkampf') return -1;
+        return 0;
+    }
+
+    function triggerClashAndRoll() {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        const overlay = document.getElementById('clash-overlay');
+        overlay.classList.add('active');
+        playCombatOverlaySound();
+
+        setTimeout(() => {
+            overlay.classList.remove('active');
+            executeRoundRolls();
+        }, 1500);
+    }
+
+    function executeRoundRolls() {
+        showScreen('screen-results');
+        triggerScenarioAmbience(appState.scenario);
+        
+        const actionBtn = document.getElementById('action-btn');
+        const scoreDisplay = document.getElementById('total-sum');
+        
+        actionBtn.disabled = true; actionBtn.innerText = "OVERRIDE...";
+        scoreDisplay.classList.add('score-changed');
+
+        document.getElementById('active-zone-display').innerText = scenarioData[appState.scenario].name;
+        document.getElementById('sum-nahkampf').innerText = "0";
+        document.getElementById('sum-fernkampf').innerText = "0";
+        document.getElementById('sum-superkraft').innerText = "0";
+        document.getElementById('sum-defensiv').innerText = "0";
+        scoreDisplay.innerText = "0";
+        
+        document.querySelectorAll('.summary-item').forEach(item => item.classList.remove('highest-attribute-log'));
+        document.getElementById('round-title').innerText = `RUNDE ${appState.currentRound} / ${appState.totalRounds}`;
+
+        const manifestDiv = document.getElementById('active-squad-manifest');
+        manifestDiv.innerHTML = appState.squad.map(item => `${item.count}x ${item.character.icon} ${item.character.name}`).join(' | ');
+
+        const rosterContainer = document.getElementById('squad-roster-container'); rosterContainer.innerHTML = '';
+        appState.squad.forEach(item => {
+            const char = item.character; const card = document.createElement('div'); card.className = 'roster-card';
+            card.innerHTML = `
+                <div class="roster-header"><span>${char.icon} ${char.name} (Menge: ${item.count})</span></div>
+                <div class="roster-stats-line">
+                    <span style="color: var(--color-nahkampf)">⚔️ NK: Lvl ${char.stats.Nahkampf}</span>
+                    <span style="color: var(--color-fernkampf)">🏹 FK: Lvl ${char.stats.Fernkampf}</span>
+                    <span style="color: var(--color-superkraft)">⚡ SK: Lvl ${char.stats.Superkraft}</span>
+                    <span style="color: var(--color-defensiv)">🛡️ DF: Lvl ${char.stats.Defensiv}</span>
+                </div>
+            `;
+            rosterContainer.appendChild(card);
+        });
+
+        const board = document.getElementById('dice-board-area'); board.innerHTML = '';
+        let attributeSums = { "Nahkampf": 0, "Fernkampf": 0, "Superkraft": 0, "Defensiv": 0 };
+        let currentLiveSums = { "Nahkampf": 0, "Fernkampf": 0, "Superkraft": 0, "Defensiv": 0 };
+        const placeholderChars = ["?", "#", "X", "@", "!", "*"];
+
+        let diceQueue = []; let globalUnitIndex = 1;
+
+        appState.squad.forEach(squadItem => {
+            const char = squadItem.character;
+            for (let i = 0; i < squadItem.count; i++) {
+                const pickedAttribute = getTacticalAttribute(char.stats);
+                
+                const currentLevel = char.stats[pickedAttribute];
+                const dCfg = diceLevels[currentLevel];
+                const cfg = attrConfigs[pickedAttribute];
+                
+                const rawRoll = rollDice(dCfg.max);
+                const malus = getScenarioModifier(pickedAttribute);
+                const finalResult = Math.max(1, rawRoll + malus);
+
+                attributeSums[pickedAttribute] += finalResult;
+
+                diceQueue.push({
+                    globalId: globalUnitIndex, charIcon: char.icon, attribute: pickedAttribute,
+                    result: finalResult, color: cfg.color, diceName: dCfg.name, maxVal: dCfg.max, raw: rawRoll
+                });
+                globalUnitIndex++;
+            }
+        });
+
+        diceQueue.forEach((dice, index) => {
+            setTimeout(() => {
+                const diceCard = document.createElement('div'); diceCard.className = 'dice-cup'; diceCard.id = `cup-${dice.globalId}`;
+                diceCard.innerHTML = `
+                    <div id="graphic-${dice.globalId}" class="dice-graphic dice-rolling" style="background-color: #3a0000;">?</div>
+                    <div class="dice-meta">${dice.charIcon} COMP...</div>
+                `;
+                board.appendChild(diceCard);
+                setTimeout(() => diceCard.classList.add('visible'), 10);
+
+                let flackertime = 0;
+                let rollInterval = setInterval(() => {
+                    const graphicElem = document.getElementById(`graphic-${dice.globalId}`);
+                    if (graphicElem) {
+                        graphicElem.innerText = placeholderChars[Math.floor(Math.random() * placeholderChars.length)];
+                        playDiceTickSound();
+                    }
+                    flackertime += 40;
+
+                    if (flackertime >= 320) { 
+                        clearInterval(rollInterval);
+                        
+                        let dynamicClass = "";
+                        if (dice.raw === dice.maxVal) {
+                            dynamicClass = "dice-crit"; playCritSound();
+                        } else if (dice.raw === 1) {
+                            dynamicClass = "dice-fail"; playFailSound();
+                        } else {
+                            let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+                            osc.type = 'sine'; osc.frequency.setValueAtTime(350, audioCtx.currentTime);
+                            gain.gain.setValueAtTime(0.04, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+                            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+                        }
+
+                        const finalCup = document.getElementById(`cup-${dice.globalId}`);
+                        if (finalCup) {
+                            finalCup.innerHTML = `
+                                <div class="dice-graphic ${dynamicClass}" style="background-color: ${dice.color}; text-shadow: 0 0 5px #000; font-family: var(--font-heading);">
+                                    ${dice.result}
+                                </div>
+                                <div class="dice-meta">${dice.charIcon} ${dice.diceName}</div>
+                            `;
+                        }
+
+                        currentLiveSums[dice.attribute] += dice.result;
+                        document.getElementById('sum-nahkampf').innerText = currentLiveSums["Nahkampf"];
+                        document.getElementById('sum-fernkampf').innerText = currentLiveSums["Fernkampf"];
+                        document.getElementById('sum-superkraft').innerText = currentLiveSums["Superkraft"];
+                        document.getElementById('sum-defensiv').innerText = currentLiveSums["Defensiv"];
+                        scoreDisplay.innerText = currentLiveSums["Nahkampf"] + currentLiveSums["Fernkampf"] + currentLiveSums["Superkraft"];
+
+                        if (index === diceQueue.length - 1) endOfRollingPhase(attributeSums);
+                    }
+                }, 40);
+
+            }, index * 100); 
+        });
+    }
+
+    function endOfRollingPhase(attributeSums) {
+        const actionBtn = document.getElementById('action-btn'); const scoreDisplay = document.getElementById('total-sum');
+        actionBtn.disabled = false; scoreDisplay.classList.remove('score-changed');
+        actionBtn.innerText = (appState.currentRound === appState.totalRounds) ? "EINSATZ BEENDET" : "NÄCHSTE RUNDE";
+
+        let highestAttr = null; let highestValue = -1;
+        attributes.forEach(attr => { if (attributeSums[attr] > highestValue) { highestValue = attributeSums[attr]; highestAttr = attr; } });
+
+        if (highestAttr && highestValue > 0) {
+            const highestRow = document.getElementById(`item-${highestAttr}`);
+            if (highestRow) highestRow.classList.add('highest-attribute-log');
+        }
+
+        setTimeout(() => {
+            const targetOffset = actionBtn.getBoundingClientRect().top + window.pageYOffset;
+            window.scrollTo({ top: targetOffset - window.innerHeight + 120, behavior: 'smooth' });
+        }, 200);
+    }
+
+    function handleActionClick() {
+        if (appState.currentRound < appState.totalRounds) {
+            appState.currentRound++; triggerClashAndRoll();
+        } else {
+            appState = { squad: [], activeSelection: null, totalRounds: 0, currentRound: 0, scenario: 'closecombat' };
+            init(); window.scrollTo({ top: 0, behavior: 'instant' }); showScreen('screen-char');
+        }
+    }
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('Service Worker registriert'))
+      .catch(err => console.log('Service Worker Fehler', err));
+  }
+</script>
+</body>
+</html>
