@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="manifest" href="manifest.json">
-    <title>Dystopia Tactical Squad Dice v19.3 - EMERGENCY FIX</title>
+    <title>Dystopia Tactical Squad Dice v19.4 - MALUS FIX</title>
     <style>
         :root {
             --bg-color: #020203;
@@ -248,7 +248,7 @@
         .clash-overlay.active { opacity: 1; animation: crt-flicker-extreme 0.05s infinite alternate; }
         .clash-overlay::before {
             content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.6) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.15), rgba(0, 255, 0, 0.05), rgba(0, 0, 255, 0.15));
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.6) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.15), rgba(0, 255, 0, 0.05), rgba(0, 255, 0, 0.15));
             z-index: 2; background-size: 100% 8px, 8px 100%;
         }
         .clash-text {
@@ -536,32 +536,32 @@
 
     const scenarioData = {
         night: { 
-            name: "🌌 Nachtmission", 
+            name: "🌌 Nachtmission (-1 Fernkampf)", 
             vignette: "inset 0 0 100px rgba(0, 10, 30, 0.95), inset 0 0 40px rgba(0, 255, 100, 0.2)", 
             filter: "brightness(0.7) contrast(1.2)" 
         },
         heavyrain: { 
-            name: "🌧️ Starkregen", 
+            name: "🌧️ Starkregen (-1 Fernkampf / -1 Superkraft)", 
             vignette: "inset 0 0 80px rgba(0, 110, 255, 0.5), inset 0 0 30px rgba(0,0,0,0.9)", 
             filter: "hue-rotate(15deg) saturate(1.4)" 
         },
         wasteland: { 
-            name: "☢️ Ödland-Rauch", 
+            name: "☢️ Ödland-Rauch (-1 Superkraft)", 
             vignette: "inset 0 0 80px rgba(85, 255, 0, 0.45), inset 0 0 30px rgba(0,0,0,0.9)", 
             filter: "sepia(0.2) hue-rotate(50deg)" 
         },
         heatwave: { 
-            name: "🔥 Hitzewelle", 
+            name: "🔥 Hitzewelle (-1 Nahkampf / -1 Defensive)", 
             vignette: "inset 0 0 90px rgba(255, 68, 0, 0.55), inset 0 0 30px rgba(0,0,0,0.9)", 
             filter: "brightness(1.1) contrast(1.3) saturate(1.5)" 
         },
         acid: { 
-            name: "🧪 Säureregen", 
+            name: "🧪 Säureregen (-1 Defensive)", 
             vignette: "inset 0 0 80px rgba(230, 255, 0, 0.45), inset 0 0 35px rgba(0,0,0,0.9)", 
             filter: "hue-rotate(35deg) contrast(1.1)" 
         },
         sun: { 
-            name: "☀️ Grelle Sonne", 
+            name: "☀️ Grelle Sonne (-1 Nahkampf)", 
             vignette: "inset 0 0 120px rgba(255, 255, 255, 0.4), inset 0 0 30px rgba(0,0,0,0.7)", 
             filter: "brightness(1.3) contrast(0.9)" 
         },
@@ -617,9 +617,6 @@
                 btn.disabled = true; 
             }
             
-            // DYNAMISCHE BILD-LOGIK:
-            // Sucht im selben Ordner nach [id].png (z.B. soldat.png, scharfschuetze.png)
-            // Wenn das Bild (noch) nicht existiert, wird das img-Element unsichtbar geschaltet.
             let imgHtml = `<img src="${char.id}.png" alt="${char.name}" 
                                 onload="this.style.display='block';" 
                                 onerror="this.style.display='none';" 
