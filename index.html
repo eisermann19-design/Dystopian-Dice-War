@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="manifest" href="manifest.json">
-    <title>Dystopia Tactical Squad Dice v19.4 - MALUS FIX</title>
+    <title>Dystopia Tactical Squad Dice v19.5 - REAL DICE DISPLAY</title>
     <style>
         :root {
             --bg-color: #020203;
@@ -201,6 +201,7 @@
         .summary-container { background: #040407; padding: 12px; border-radius: 4px; margin-top: 15px; text-align: left; border: 1px solid #201010; }
         .summary-title { text-transform: uppercase; margin-bottom: 6px; color: #fff; border-bottom: 1px solid #201010; padding-bottom: 4px; }
         .summary-item { display: flex; justify-content: space-between; margin: 6px 0; font-size: 14px; padding: 4px 8px; border-radius: 4px; border: 1px solid transparent; }
+        .summary-modifier-text { font-size: 11px; color: #ff3333; margin-left: 6px; font-style: cubic-bezier; }
         
         .summary-item.highest-attribute-log {
             background-color: var(--color-highlight-green); border: 1px solid var(--border-highlight-green);
@@ -373,16 +374,16 @@
         <div class="summary-container">
             <div class="summary-title">Wirkung (Summen):</div>
             <div id="item-Nahkampf" class="summary-item" style="color: var(--color-nahkampf);">
-                <span>⚔️ Nahkampf:</span> <span id="sum-nahkampf">0</span>
+                <span>⚔️ Nahkampf: <span id="sum-nahkampf">0</span><span id="mod-nahkampf" class="summary-modifier-text"></span></span>
             </div>
             <div id="item-Fernkampf" class="summary-item" style="color: var(--color-fernkampf);">
-                <span>🏹 Fernkampf:</span> <span id="sum-fernkampf">0</span>
+                <span>🏹 Fernkampf: <span id="sum-fernkampf">0</span><span id="mod-fernkampf" class="summary-modifier-text"></span></span>
             </div>
             <div id="item-Superkraft" class="summary-item" style="color: var(--color-superkraft);">
-                <span>⚡ Superkraft:</span> <span id="sum-superkraft">0</span>
+                <span>⚡ Superkraft: <span id="sum-superkraft">0</span><span id="mod-superkraft" class="summary-modifier-text"></span></span>
             </div>
             <div id="item-Defensiv" class="summary-item" style="color: var(--color-defensiv);">
-                <span>🛡️ Defensive:</span> <span id="sum-defensiv">0</span>
+                <span>🛡️ Defensive: <span id="sum-defensiv">0</span><span id="mod-defensiv" class="summary-modifier-text"></span></span>
             </div>
         </div>
 
@@ -741,6 +742,12 @@
         document.getElementById('sum-fernkampf').innerText = "0";
         document.getElementById('sum-superkraft').innerText = "0";
         document.getElementById('sum-defensiv').innerText = "0";
+        
+        document.getElementById('mod-nahkampf').innerText = "";
+        document.getElementById('mod-fernkampf').innerText = "";
+        document.getElementById('mod-superkraft').innerText = "";
+        document.getElementById('mod-defensiv').innerText = "";
+        
         scoreDisplay.innerText = "0";
         
         document.querySelectorAll('.summary-item').forEach(item => item.classList.remove('highest-attribute-log'));
@@ -765,8 +772,8 @@
         });
 
         const board = document.getElementById('dice-board-area'); board.innerHTML = '';
-        let attributeSums = { "Nahkampf": 0, "Fernkampf": 0, "Superkraft": 0, "Defensiv": 0 };
-        let currentLiveSums = { "Nahkampf": 0, "Fernkampf": 0, "Superkraft": 0, "Defensiv": 0 };
+        let attributeSumsRaw = { "Nahkampf": 0, "Fernkampf": 0, "Superkraft": 0, "Defensiv": 0 };
+        let currentLiveSumsRaw = { "Nahkampf": 0, "Fernkampf": 0, "Superkraft": 0, "Defensiv": 0 };
         const placeholderChars = ["?", "#", "X", "@", "!", "*"];
 
         let diceQueue = []; let globalUnitIndex = 1;
@@ -781,14 +788,12 @@
                 const cfg = attrConfigs[pickedAttribute];
                 
                 const rawRoll = rollDice(dCfg.max);
-                const malus = getScenarioModifier(pickedAttribute);
-                const finalResult = Math.max(1, rawRoll + malus);
 
-                attributeSums[pickedAttribute] += finalResult;
+                attributeSumsRaw[pickedAttribute] += rawRoll;
 
                 diceQueue.push({
                     globalId: globalUnitIndex, charIcon: char.icon, attribute: pickedAttribute,
-                    result: finalResult, color: cfg.color, diceName: dCfg.name, maxVal: dCfg.max, raw: rawRoll
+                    result: rawRoll, color: cfg.color, diceName: dCfg.name, maxVal: dCfg.max, raw: rawRoll
                 });
                 globalUnitIndex++;
             }
@@ -838,14 +843,35 @@
                             `;
                         }
 
-                        currentLiveSums[dice.attribute] += dice.result;
-                        document.getElementById('sum-nahkampf').innerText = currentLiveSums["Nahkampf"];
-                        document.getElementById('sum-fernkampf').innerText = currentLiveSums["Fernkampf"];
-                        document.getElementById('sum-superkraft').innerText = currentLiveSums["Superkraft"];
-                        document.getElementById('sum-defensiv').innerText = currentLiveSums["Defensiv"];
-                        scoreDisplay.innerText = currentLiveSums["Nahkampf"] + currentLiveSums["Fernkampf"] + currentLiveSums["Superkraft"];
+                        currentLiveSumsRaw[dice.attribute] += dice.result;
+                        
+                        // Zähle aktuelle Modifikatoren für die Anzeige
+                        let modNK = getScenarioModifier("Nahkampf");
+                        let modFK = getScenarioModifier("Fernkampf");
+                        let modSK = getScenarioModifier("Superkraft");
+                        let modDF = getScenarioModifier("Defensiv");
 
-                        if (index === diceQueue.length - 1) endOfRollingPhase(attributeSums);
+                        document.getElementById('sum-nahkampf').innerText = currentLiveSumsRaw["Nahkampf"];
+                        if(modNK !== 0) document.getElementById('mod-nahkampf').innerText = ` (${modNK * appState.squad.reduce((acc, cur) => acc + (cur.character.stats["Nahkampf"] >= 0 ? cur.count : 0), 0)} Zone)`; // grobe Schätzung/bessere Live-Anrechnung am Ende
+                        
+                        document.getElementById('sum-fernkampf').innerText = currentLiveSumsRaw["Fernkampf"];
+                        document.getElementById('sum-superkraft').innerText = currentLiveSumsRaw["Superkraft"];
+                        document.getElementById('sum-defensiv').innerText = currentLiveSumsRaw["Defensiv"];
+
+                        // Live-Berechnung des tatsächlichen Schadens im Kombi-Feld unten
+                        let liveCalculatedTotal = 0;
+                        attributes.forEach(attr => {
+                            if (attr !== "Defensiv") {
+                                // Berechne Truppenanzahl die dieses Attribut gewürfelt hat, um Mali korrekt live zu subtrahieren
+                                let countWithThisAttr = diceQueue.slice(0, index + 1).filter(d => d.attribute === attr).length;
+                                let rawSubTotal = currentLiveSumsRaw[attr];
+                                let totalMalusForAttr = getScenarioModifier(attr) * countWithThisAttr;
+                                liveCalculatedTotal += Math.max(0, rawSubTotal + totalMalusForAttr);
+                            }
+                        });
+                        scoreDisplay.innerText = liveCalculatedTotal;
+
+                        if (index === diceQueue.length - 1) endOfRollingPhase(attributeSumsRaw, diceQueue);
                     }
                 }, 40);
 
@@ -853,13 +879,40 @@
         });
     }
 
-    function endOfRollingPhase(attributeSums) {
+    function endOfRollingPhase(attributeSumsRaw, diceQueue) {
         const actionBtn = document.getElementById('action-btn'); const scoreDisplay = document.getElementById('total-sum');
         actionBtn.disabled = false; scoreDisplay.classList.remove('score-changed');
         actionBtn.innerText = (appState.currentRound === appState.totalRounds) ? "EINSATZ BEENDET" : "NÄCHSTE RUNDE";
 
+        let finalTotalScore = 0;
+
+        attributes.forEach(attr => {
+            const rawSum = attributeSumsRaw[attr];
+            const rolledDiceCount = diceQueue.filter(d => d.attribute === attr).length;
+            const modifierPerDie = getScenarioModifier(attr);
+            const totalModifier = modifierPerDie * rolledDiceCount;
+            
+            // Textanzeige für die Summen-Zeilen anpassen
+            const modSpan = document.getElementById(`mod-${attr.toLowerCase() === 'defensiv' ? 'defensiv' : attr.toLowerCase()}`);
+            if (modSpan) {
+                if (totalModifier !== 0) {
+                    modSpan.innerText = ` [Zone: ${totalModifier}]`;
+                } else {
+                    modSpan.innerText = "";
+                }
+            }
+
+            if (attr !== "Defensiv") {
+                // Modifikator anwenden, darf nicht unter 0 fallen
+                finalTotalScore += Math.max(0, rawSum + totalModifier);
+            }
+        });
+
+        // Setze finalen, echten kombinierten Schaden
+        scoreDisplay.innerText = finalTotalScore;
+
         let highestAttr = null; let highestValue = -1;
-        attributes.forEach(attr => { if (attributeSums[attr] > highestValue) { highestValue = attributeSums[attr]; highestAttr = attr; } });
+        attributes.forEach(attr => { if (attributeSumsRaw[attr] > highestValue) { highestValue = attributeSumsRaw[attr]; highestAttr = attr; } });
 
         if (highestAttr && highestValue > 0) {
             const highestRow = document.getElementById(`item-${highestAttr}`);
